@@ -343,7 +343,7 @@ class Definition extends Model\DataObject\Fieldcollection\Definition
     /**
      * @throws Exception
      */
-    private function createContainerClasses(): void
+    private function createContainerClasses(bool $saveDefinitionFile, bool $dumpPHPClasses): void
     {
         $containerDefinition = [];
 
@@ -371,7 +371,7 @@ class Definition extends Model\DataObject\Fieldcollection\Definition
                 $new = $this->getAllowedTypesWithFieldname($class);
 
                 if (array_diff($new, $old) || array_diff($old, $new)) {
-                    $class->save();
+                    $class->dumpClass($saveDefinitionFile, $dumpPHPClasses);
                 } else {
                     // still, the brick fields definitions could have changed.
                     Cache::clearTag('class_'.$class->getId());
@@ -380,7 +380,9 @@ class Definition extends Model\DataObject\Fieldcollection\Definition
             }
         }
 
-        Pimcore::getContainer()->get(PHPObjectBrickContainerClassDumperInterface::class)->dumpContainerClasses($this);
+        if ($dumpPHPClasses) {
+            Pimcore::getContainer()->get(PHPObjectBrickContainerClassDumperInterface::class)->dumpContainerClasses($this);
+        }
     }
 
     /**
@@ -561,7 +563,7 @@ class Definition extends Model\DataObject\Fieldcollection\Definition
         // for localized fields getting a fresh copy
         RuntimeCache::set($cacheKey, $this);
 
-        $this->createContainerClasses();
+        $this->createContainerClasses($saveDefinitionFile, $dumpPHPClasses);
         $this->updateDatabase();
 
         foreach ($fieldDefinitions as $fd) {
